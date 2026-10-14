@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { useAuthMutations } from "@/service/mutations";
+import { getApiErrorMessage } from "@/service/controller/api-client";
 import { toast } from "@/components/ui/toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,11 +44,16 @@ export default function LoginClient() {
  const handlelogin: SubmitHandler<LoginInputType> = (data) => {
   login.mutate(data, {
    onSuccess(data) {
+    if (data?.data?.mfa_required) {
+     toastHandler("success", "Enter your two-factor code to continue")
+     navigation.push("/auth/verify-mfa")
+     return
+    }
     toastHandler("success", data?.message || "Login successfully")
     navigation.push("/")
    },
    onError(error) {
-    toastHandler("error", error?.message || "Login failed")
+    toastHandler("error", getApiErrorMessage(error))
    },
   })
  }
