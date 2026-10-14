@@ -6,7 +6,10 @@ const publicConfig = {
  headers: {
   "Content-Type": "application/json",
  },
+ withCredentials: true,
 }
+
+export const publicApi = axios.create(publicConfig)
 
 const privateConfig = {
  baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -16,5 +19,4 @@ const privateConfig = {
  withCredentials: true,
 }
 
-
-export const publicApi = axios.create(publicConfig)
+export const privateApi = axios.create(privateConfig)
