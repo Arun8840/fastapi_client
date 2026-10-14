@@ -2,5 +2,6 @@
 
 export const authKeys = {
  register: ["user-register"],
- login: ["user-login"]
+ login: ["user-login"],
+ logout: ["user-logout"]
 }
