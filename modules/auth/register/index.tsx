@@ -146,6 +146,7 @@ export default function RegisterClient() {
     </CardContent>
     <CardFooter className="justify-end gap-2">
      <Button size={"lg"} type="button" variant={"secondary"}
+      nativeButton={false}
       render={<Link href={"/auth/login"}>
        <ArrowLeft />Back to login
       </Link>}
