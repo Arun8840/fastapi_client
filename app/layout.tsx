@@ -6,9 +6,9 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/toast";
 import TanstackQueryProvider from "@/providers/query-client-provider";
 
-const outfitHeading = Outfit({ subsets: ['latin'], variable: '--font-heading' });
+const outfitHeading = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
-const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-sans' });
+const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", dmSans.variable, outfitHeading.variable)}
+      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, dmSans.variable, outfitHeading.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
