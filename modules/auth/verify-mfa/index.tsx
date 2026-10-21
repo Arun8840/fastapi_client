@@ -10,13 +10,14 @@ import { ArrowLeft, KeyRound, ShieldCheck } from "lucide-react"
 import { useAuthMutations } from "@/service/mutations"
 import { getApiErrorMessage } from "@/service/controller/api-client"
 import { toast } from "@/components/ui/toast"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Field, FieldContent, FieldError, FieldLabel, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Spinner } from "@/components/ui/spinner"
 import { VerifyMfaInputType, VerifyMfaSchema } from "./schema.verify-mfa"
+import { AuthCardHeader } from "../components/auth-card-header"
 
 
 const toastHandler = (type: "success" | "error", message: string) => {
@@ -64,14 +65,16 @@ export default function VerifyMfaClient() {
   <form className="w-full max-w-md" onSubmit={form.handleSubmit(handleVerify)}>
    <Card>
     <CardHeader>
-     <CardTitle className="flex items-center gap-2">
-      <ShieldCheck /> Two-factor authentication
-     </CardTitle>
-     <CardDescription>
-      {useBackupCode
-       ? "Enter one of your saved backup codes"
-       : "Enter the 6-digit code from your authenticator app"}
-     </CardDescription>
+     <AuthCardHeader
+      icon={ShieldCheck}
+      eyebrow="Security check"
+      title="Two-factor authentication"
+      description={
+       useBackupCode
+        ? "Enter one of your saved backup codes to continue."
+        : "Enter the 6-digit code from your authenticator app to continue."
+      }
+     />
     </CardHeader>
     <CardContent>
      <FieldSet>

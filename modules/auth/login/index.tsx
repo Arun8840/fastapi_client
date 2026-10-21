@@ -5,9 +5,9 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { useAuthMutations } from "@/service/mutations";
 import { getApiErrorMessage } from "@/service/controller/api-client";
 import { toast } from "@/components/ui/toast";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LogIn } from "lucide-react";
 import { Field, FieldContent, FieldError, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LoginInputType, LoginSchema } from "./schema.login";
+import { AuthCardHeader } from "../components/auth-card-header";
 
 
 const toastHandler = (type: "success" | "error", message: string) => {
@@ -61,8 +62,12 @@ export default function LoginClient() {
   <form className="w-full max-w-md" onSubmit={form.handleSubmit(handlelogin)}>
    <Card>
     <CardHeader>
-     <CardTitle>Login</CardTitle>
-     <CardDescription>Login to your account</CardDescription>
+     <AuthCardHeader
+      icon={LogIn}
+      eyebrow="Welcome back"
+      title="Sign in to your account"
+      description="Enter your email and password to access your dashboard."
+     />
     </CardHeader>
     <CardContent>
      <FieldSet>

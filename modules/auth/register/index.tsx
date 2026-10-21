@@ -2,9 +2,10 @@
 
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { RegisterInputType, RegisterSchema } from "./schema.register";
+import { AuthCardHeader } from "../components/auth-card-header";
 import { useAuthMutations } from "@/service/mutations";
 import { toast } from "@/components/ui/toast";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserPlusIcon } from "lucide-react";
 import { Field, FieldContent, FieldError, FieldLabel, FieldSet } from "@/components/ui/field";
@@ -56,8 +57,12 @@ export default function RegisterClient() {
   <form className="w-full max-w-md" onSubmit={form.handleSubmit(handleRegister)}>
    <Card>
     <CardHeader>
-     <CardTitle>Register</CardTitle>
-     <CardDescription>Create an account</CardDescription>
+     <AuthCardHeader
+      icon={UserPlusIcon}
+      eyebrow="Get started"
+      title="Create your account"
+      description="Fill in your details below to set up a new account."
+     />
     </CardHeader>
     <CardContent>
      <FieldSet>
@@ -74,11 +79,11 @@ export default function RegisterClient() {
            autoCapitalize='none'
            spellCheck={false}
            aria-invalid={Boolean(emailError)}
-           aria-describedby={emailError ? 'login-email-error' : undefined}
+           aria-describedby={emailError ? 'register-email-error' : undefined}
           />
          </FieldContent>
          {emailError && (
-          <FieldError id='login-email-error' errors={[emailError]} className='text-[#B42318]' />
+          <FieldError id='register-email-error' errors={[emailError]} className='text-[#B42318]' />
          )}
         </Field>
        }}
@@ -114,11 +119,11 @@ export default function RegisterClient() {
           <Input {...field} placeholder="Enter your password"
            type="password"
            aria-invalid={Boolean(passwordError)}
-           aria-describedby={passwordError ? 'login-password-error' : undefined}
+           aria-describedby={passwordError ? 'register-password-error' : undefined}
           />
          </FieldContent>
          {passwordError && (
-          <FieldError id='login-password-error' errors={[passwordError]} className='text-[#B42318]' />
+          <FieldError id='register-password-error' errors={[passwordError]} className='text-[#B42318]' />
          )}
         </Field>
        }}
