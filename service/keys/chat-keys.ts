@@ -1,4 +1,5 @@
 export const chatKeys = {
-  messages: ["chat-messages"],
+  conversations: ["chat-conversations"],
+  messages: (conversationId: string) => ["chat-messages", conversationId],
   users: ["chat-users"],
 }

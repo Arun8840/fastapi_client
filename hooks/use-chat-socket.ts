@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { resolveChatSocketUrl } from "@/service/controller/chat.service"
-import type { ChatMessage, ChatSocketStatus, ChatUser } from "@/types"
+import type { ChatMessage, ChatSocketStatus } from "@/types"
 
 const MAX_RECONNECT_ATTEMPTS = 6
 const MAX_RECONNECT_DELAY = 15_000
@@ -14,27 +14,40 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
+export interface ChatTypingUser {
+  conversationId: string
+  id: string
+  email: string
+}
+
+interface TypingEntry {
+  conversationId: string
+  userId: string
+  email: string
+  expiresAt: number
+}
+
 /**
  * Owns one websocket connection for the lifetime of the component.
  *
- * The server persists every message and broadcasts the stored row back to
- * everyone (including the sender). This hook keeps the *live* messages and the
- * typing indicator state; scrollback comes from the history query. History and
- * live messages are merged by id in the UI, which also makes reconnects
- * duplicate-free.
+ * The socket is conversation-agnostic: it carries every frame this user is
+ * allowed to see (the room plus their DMs). Frames are tagged with a
+ * `conversation_id`, and the UI filters them. That means switching threads
+ * never reconnects the socket, and a message for a background thread still
+ * refreshes the sidebar.
  */
 export function useChatSocket() {
   const [status, setStatus] = useState<ChatSocketStatus>("connecting")
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  // userId -> { email, expiresAt }. Local expiry means a dropped "stop" frame
-  // cannot leave someone "typing" forever.
-  const [typing, setTyping] = useState<
-    Record<string, { email: string; expiresAt: number }>
-  >({})
+  // `${conversationId}:${userId}` -> entry. Local expiry means a dropped "stop"
+  // frame cannot leave someone "typing" forever.
+  const [typing, setTyping] = useState<Record<string, TypingEntry>>({})
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const socketRef = useRef<WebSocket | null>(null)
-  const lastTypingSentRef = useRef(0)
+  // Last "started typing" time per conversation, so a burst of keystrokes in
+  // one thread cannot starve another thread's indicator.
+  const lastTypingSentRef = useRef<Record<string, number>>({})
 
   // Drop expired typers even if the server never sends a stop event.
   useEffect(() => {
@@ -74,6 +87,7 @@ export function useChatSocket() {
         failures = 0
         setError(null)
         setTyping({})
+        lastTypingSentRef.current = {}
         setStatus("open")
       }
 
@@ -98,6 +112,7 @@ export function useChatSocket() {
         if (frame.type === "typing") {
           const user = frame.user
           if (
+            typeof frame.conversation_id !== "string" ||
             !isRecord(user) ||
             typeof user.id !== "string" ||
             typeof user.email !== "string"
@@ -106,19 +121,23 @@ export function useChatSocket() {
           }
 
           const isTyping = frame.is_typing !== false
+          const conversationId = frame.conversation_id
           const userId = user.id
           const userEmail = user.email
+          const key = `${conversationId}:${userId}`
           setTyping((current) => {
             if (!isTyping) {
-              if (!(userId in current)) return current
+              if (!(key in current)) return current
               const next = { ...current }
-              delete next[userId]
+              delete next[key]
               return next
             }
 
             return {
               ...current,
-              [userId]: {
+              [key]: {
+                conversationId,
+                userId,
                 email: userEmail,
                 expiresAt: Date.now() + TYPING_TTL_MS,
               },
@@ -132,6 +151,7 @@ export function useChatSocket() {
         const user = frame.user
         if (
           typeof frame.id !== "string" ||
+          typeof frame.conversation_id !== "string" ||
           typeof frame.content !== "string" ||
           typeof frame.created_at !== "string" ||
           !isRecord(user) ||
@@ -143,6 +163,7 @@ export function useChatSocket() {
 
         const message: ChatMessage = {
           id: frame.id,
+          conversation_id: frame.conversation_id,
           content: frame.content,
           created_at: frame.created_at,
           user: { id: user.id, email: user.email },
@@ -155,6 +176,14 @@ export function useChatSocket() {
             ? current
             : [...current, message],
         )
+        // Seeing the message means the author stopped typing.
+        setTyping((current) => {
+          const key = `${message.conversation_id}:${message.user.id}`
+          if (!(key in current)) return current
+          const next = { ...current }
+          delete next[key]
+          return next
+        })
         setError(null)
       }
 
@@ -194,40 +223,56 @@ export function useChatSocket() {
     setAttempt((value) => value + 1)
   }, [])
 
-  const sendMessage = useCallback((content: string) => {
-    const socket = socketRef.current
-    const message = content.trim()
+  const sendMessage = useCallback(
+    (content: string, conversationId: string) => {
+      const socket = socketRef.current
+      const message = content.trim()
 
-    if (!message || !socket || socket.readyState !== WebSocket.OPEN) {
-      return false
-    }
+      if (!message || !socket || socket.readyState !== WebSocket.OPEN) {
+        return false
+      }
 
-    socket.send(JSON.stringify({ content: message }))
-    return true
-  }, [])
+      socket.send(
+        JSON.stringify({ content: message, conversation_id: conversationId }),
+      )
+      return true
+    },
+    [],
+  )
 
-  const sendTyping = useCallback((isTyping = true) => {
-    const socket = socketRef.current
+  const sendTyping = useCallback(
+    (isTyping: boolean, conversationId: string) => {
+      const socket = socketRef.current
 
-    if (!socket || socket.readyState !== WebSocket.OPEN) return
+      if (!socket || socket.readyState !== WebSocket.OPEN) return
 
-    if (isTyping) {
-      // Throttle "started typing" frames so a burst of keystrokes does not
-      // flood every other client. The stop frame always goes through.
-      const now = Date.now()
-      if (now - lastTypingSentRef.current < TYPING_THROTTLE_MS) return
-      lastTypingSentRef.current = now
-    } else {
-      lastTypingSentRef.current = 0
-    }
+      if (isTyping) {
+        // Throttle "started typing" frames so a burst of keystrokes does not
+        // flood every other client. The stop frame always goes through.
+        const now = Date.now()
+        const last = lastTypingSentRef.current[conversationId] ?? 0
+        if (now - last < TYPING_THROTTLE_MS) return
+        lastTypingSentRef.current[conversationId] = now
+      } else {
+        lastTypingSentRef.current[conversationId] = 0
+      }
 
-    socket.send(JSON.stringify({ type: "typing", is_typing: isTyping }))
-  }, [])
+      socket.send(
+        JSON.stringify({
+          type: "typing",
+          conversation_id: conversationId,
+          is_typing: isTyping,
+        }),
+      )
+    },
+    [],
+  )
 
-  const typingUsers = useMemo<ChatUser[]>(
+  const typingUsers = useMemo<ChatTypingUser[]>(
     () =>
-      Object.entries(typing).map(([id, value]) => ({
-        id,
+      Object.values(typing).map((value) => ({
+        id: value.userId,
+        conversationId: value.conversationId,
         email: value.email,
       })),
     [typing],
