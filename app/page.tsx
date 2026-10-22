@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/dark-mode-switcher";
 import { Spinner } from "@/components/ui/spinner";
+import { MessagesSquare } from "lucide-react";
 import { useAuthMutations } from "@/service/mutations";
 import { toast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
@@ -35,9 +36,16 @@ export default function Home() {
       <Button onClick={handleLogout} disabled={isPending} size="lg" variant={"destructive"}>
         {isPending ? <Spinner /> : " Logout"}
       </Button>
-      <Button size="lg">
-        Hello world
-      </Button>
+      <Button
+        size="lg"
+        nativeButton={false}
+        render={
+          <Link href="/chat">
+            <MessagesSquare />
+            Open chat
+          </Link>
+        }
+      />
     </div>
   );
 }
