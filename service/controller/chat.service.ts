@@ -1,4 +1,4 @@
-import type { ApiResponse, ChatHistory } from "@/types"
+import type { ApiResponse, ChatHistory, ChatUser } from "@/types"
 
 import { privateApi } from "./api-client"
 
@@ -25,6 +25,12 @@ export const chatService = {
     const res = await privateApi.get<ApiResponse<ChatHistory>>("/chat/messages", {
       params: { cursor, limit: 50 },
     })
+    return res.data
+  },
+
+  /** Lean participant list that every signed-in member is allowed to read. */
+  users: async () => {
+    const res = await privateApi.get<ApiResponse<ChatUser[]>>("/chat/users")
     return res.data
   },
 }

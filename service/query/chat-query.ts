@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 
 import { chatService } from "../controller/chat.service"
 import { chatKeys } from "../keys/chat-keys"
@@ -13,4 +13,12 @@ export const useChatMessages = () =>
     queryFn: ({ pageParam }) => chatService.history(pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.data?.next_cursor ?? undefined,
+  })
+
+export const useChatUsers = () =>
+  useQuery({
+    queryKey: chatKeys.users,
+    queryFn: chatService.users,
+    // The participant list changes rarely; avoid refetching it on every mount.
+    staleTime: 60_000,
   })

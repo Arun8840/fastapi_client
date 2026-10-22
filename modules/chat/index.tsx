@@ -8,10 +8,12 @@ import {
   RefreshCw,
   SendHorizontal,
   TriangleAlert,
+  Users,
 } from "lucide-react"
 import Link from "next/link"
 import { type FormEvent, type KeyboardEvent, useMemo, useState } from "react"
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Button } from "@/components/ui/button"
@@ -23,6 +25,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item"
 import {
   Message,
   MessageAvatar,
@@ -38,10 +47,18 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { useChatSocket } from "@/hooks/use-chat-socket"
 import { cn } from "@/lib/utils"
-import { useChatMessages, useCurrentUser } from "@/service/query"
+import { useChatMessages, useChatUsers, useCurrentUser } from "@/service/query"
 import type { ChatMessage, ChatSocketStatus } from "@/types"
 
 const STATUS: Record<ChatSocketStatus, { label: string; dot: string }> = {
@@ -133,7 +150,14 @@ export default function ChatRoom() {
     hasNextPage,
     isFetchingNextPage,
   } = useChatMessages()
+  const {
+    data: users,
+    isPending: isUsersPending,
+    isError: isUsersError,
+    refetch: refetchUsers,
+  } = useChatUsers()
   const [draft, setDraft] = useState("")
+  const [peopleOpen, setPeopleOpen] = useState(false)
 
   /**
    * Pages arrive newest-first ([page0 = newest]). Reverse the page order, then
@@ -173,6 +197,17 @@ export default function ChatRoom() {
     () => typingUsers.filter((typer) => typer.email !== email),
     [typingUsers, email],
   )
+  // Put yourself first, then sort everyone else alphabetically.
+  const members = useMemo(() => {
+    const list = users?.data ?? []
+
+    return [...list].sort((a, b) => {
+      if (a.email === b.email) return 0
+      if (a.email === email) return -1
+      if (b.email === email) return 1
+      return a.email.localeCompare(b.email)
+    })
+  }, [users, email])
 
   const submit = () => {
     // Clear the indicator immediately instead of waiting for the TTL.
@@ -218,6 +253,20 @@ export default function ChatRoom() {
               <span className={cn("size-2 rounded-full", statusInfo.dot)} />
               {statusInfo.label}
             </Badge>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPeopleOpen(true)}
+            >
+              <Users />
+              <span className="hidden sm:inline">People</span>
+              {members.length > 0 && (
+                <span className="tabular-nums text-muted-foreground">
+                  {members.length}
+                </span>
+              )}
+            </Button>
             {!connected && (
               <Button
                 type="button"
@@ -387,6 +436,76 @@ export default function ChatRoom() {
           </footer>
         </div>
       </div>
+
+      <Sheet open={peopleOpen} onOpenChange={setPeopleOpen}>
+        <SheetContent side="right" className="gap-0">
+          <SheetHeader className="border-b">
+            <SheetTitle>People</SheetTitle>
+            <SheetDescription>
+              Everyone with an account can join this room.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            {isUsersPending ? (
+              <div className="space-y-1 p-2">
+                {[0, 1, 2, 3].map((index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 rounded-lg p-2"
+                  >
+                    <Skeleton className="size-6 rounded-full" />
+                    <Skeleton className="h-3.5 w-40" />
+                  </div>
+                ))}
+              </div>
+            ) : isUsersError ? (
+              <div className="flex flex-col items-center gap-3 p-6 text-center">
+                <TriangleAlert className="size-5 text-destructive" />
+                <p className="text-sm text-muted-foreground">
+                  Could not load people.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void refetchUsers()}
+                >
+                  <RefreshCw />
+                  Retry
+                </Button>
+              </div>
+            ) : members.length === 0 ? (
+              <p className="p-6 text-center text-sm text-muted-foreground">
+                No one has joined yet.
+              </p>
+            ) : (
+              <ItemGroup className="gap-0.5">
+                {members.map((member) => (
+                  <Item
+                    key={member.id}
+                    size="sm"
+                    variant={member.email === email ? "muted" : "default"}
+                  >
+                    <Avatar size="sm">
+                      <AvatarFallback>
+                        {getInitials(member.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <ItemContent>
+                      <ItemTitle className="w-full truncate">
+                        {member.email}
+                      </ItemTitle>
+                      {member.email === email && (
+                        <ItemDescription>You</ItemDescription>
+                      )}
+                    </ItemContent>
+                  </Item>
+                ))}
+              </ItemGroup>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </section>
   )
 }
