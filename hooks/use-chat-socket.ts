@@ -1,24 +1,56 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { resolveChatSocketUrl } from "@/service/controller/chat.service"
-import type { ChatMessage, ChatSocketStatus } from "@/types"
+import type { ChatMessage, ChatSocketStatus, ChatUser } from "@/types"
 
 const MAX_RECONNECT_ATTEMPTS = 6
 const MAX_RECONNECT_DELAY = 15_000
+const TYPING_TTL_MS = 4_000
+const TYPING_THROTTLE_MS = 2_000
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
-
+/**
+ * Owns one websocket connection for the lifetime of the component.
+ *
+ * The server persists every message and broadcasts the stored row back to
+ * everyone (including the sender). This hook keeps the *live* messages and the
+ * typing indicator state; scrollback comes from the history query. History and
+ * live messages are merged by id in the UI, which also makes reconnects
+ * duplicate-free.
+ */
 export function useChatSocket() {
   const [status, setStatus] = useState<ChatSocketStatus>("connecting")
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  // userId -> { email, expiresAt }. Local expiry means a dropped "stop" frame
+  // cannot leave someone "typing" forever.
+  const [typing, setTyping] = useState<
+    Record<string, { email: string; expiresAt: number }>
+  >({})
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const socketRef = useRef<WebSocket | null>(null)
+  const lastTypingSentRef = useRef(0)
+
+  // Drop expired typers even if the server never sends a stop event.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTyping((current) => {
+        const now = Date.now()
+        const alive = Object.entries(current).filter(
+          ([, value]) => value.expiresAt > now,
+        )
+        if (alive.length === Object.keys(current).length) return current
+        return Object.fromEntries(alive)
+      })
+    }, 1_000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     // `attempt` is a reconnect trigger: bumping it tears down the current
@@ -41,6 +73,7 @@ export function useChatSocket() {
         if (disposed) return
         failures = 0
         setError(null)
+        setTyping({})
         setStatus("open")
       }
 
@@ -61,6 +94,39 @@ export function useChatSocket() {
           )
           return
         }
+
+        if (frame.type === "typing") {
+          const user = frame.user
+          if (
+            !isRecord(user) ||
+            typeof user.id !== "string" ||
+            typeof user.email !== "string"
+          ) {
+            return
+          }
+
+          const isTyping = frame.is_typing !== false
+          const userId = user.id
+          const userEmail = user.email
+          setTyping((current) => {
+            if (!isTyping) {
+              if (!(userId in current)) return current
+              const next = { ...current }
+              delete next[userId]
+              return next
+            }
+
+            return {
+              ...current,
+              [userId]: {
+                email: userEmail,
+                expiresAt: Date.now() + TYPING_TTL_MS,
+              },
+            }
+          })
+          return
+        }
+
         if (frame.type !== "message") return
 
         const user = frame.user
@@ -140,5 +206,40 @@ export function useChatSocket() {
     return true
   }, [])
 
-  return { status, messages, error, reconnect, sendMessage }
+  const sendTyping = useCallback((isTyping = true) => {
+    const socket = socketRef.current
+
+    if (!socket || socket.readyState !== WebSocket.OPEN) return
+
+    if (isTyping) {
+      // Throttle "started typing" frames so a burst of keystrokes does not
+      // flood every other client. The stop frame always goes through.
+      const now = Date.now()
+      if (now - lastTypingSentRef.current < TYPING_THROTTLE_MS) return
+      lastTypingSentRef.current = now
+    } else {
+      lastTypingSentRef.current = 0
+    }
+
+    socket.send(JSON.stringify({ type: "typing", is_typing: isTyping }))
+  }, [])
+
+  const typingUsers = useMemo<ChatUser[]>(
+    () =>
+      Object.entries(typing).map(([id, value]) => ({
+        id,
+        email: value.email,
+      })),
+    [typing],
+  )
+
+  return {
+    status,
+    messages,
+    typingUsers,
+    error,
+    reconnect,
+    sendMessage,
+    sendTyping,
+  }
 }

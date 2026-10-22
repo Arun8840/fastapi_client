@@ -71,6 +71,14 @@ function getInitials(email: string) {
   return initials || "?"
 }
 
+function formatTyping(emails: string[]) {
+  const names = emails.map((email) => email.split("@")[0] ?? email)
+
+  if (names.length === 1) return `${names[0]} is typing…`
+  if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`
+  return `${names[0]} and ${names.length - 1} others are typing…`
+}
+
 function MessageRow({
   message,
   mine,
@@ -109,9 +117,11 @@ export default function ChatRoom() {
   const {
     status,
     messages: liveMessages,
+    typingUsers,
     error,
     reconnect,
     sendMessage,
+    sendTyping,
   } = useChatSocket()
   const { data: user } = useCurrentUser()
   const {
@@ -157,10 +167,23 @@ export default function ChatRoom() {
   const connected = status === "open"
   const email = user?.data?.email
   const statusInfo = STATUS[status]
+  // The server already excludes the sender, but filtering here also covers two
+  // tabs signed in with the same account.
+  const typers = useMemo(
+    () => typingUsers.filter((typer) => typer.email !== email),
+    [typingUsers, email],
+  )
 
   const submit = () => {
+    // Clear the indicator immediately instead of waiting for the TTL.
+    sendTyping(false)
     if (!sendMessage(draft)) return
     setDraft("")
+  }
+
+  const handleChange = (value: string) => {
+    setDraft(value)
+    sendTyping(value.trim().length > 0)
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -325,11 +348,22 @@ export default function ChatRoom() {
                 {error}
               </p>
             )}
+            <div
+              aria-live="polite"
+              className="mb-1.5 flex h-4 items-center text-xs text-muted-foreground"
+            >
+              {typers.length > 0 && (
+                <span className="truncate">
+                  {formatTyping(typers.map((typer) => typer.email))}
+                </span>
+              )}
+            </div>
             <form onSubmit={handleSubmit} className="flex items-end gap-2">
               <Textarea
                 value={draft}
-                onChange={(event) => setDraft(event.target.value)}
+                onChange={(event) => handleChange(event.target.value)}
                 onKeyDown={handleKeyDown}
+                onBlur={() => sendTyping(false)}
                 placeholder={
                   connected ? "Message the room…" : "Waiting for a connection…"
                 }
