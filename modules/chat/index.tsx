@@ -23,7 +23,6 @@ import {
   useState,
 } from "react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
@@ -84,6 +83,7 @@ import type {
   Conversation,
   ConversationKind,
 } from "@/types";
+import Avvatars from "@/components/ui/use-avatars";
 
 const STATUS: Record<ChatSocketStatus, { label: string; dot: string }> = {
   open: { label: "Live", dot: "bg-emerald-500" },
@@ -146,9 +146,7 @@ function MessageRow({
     <MessageScrollerItem messageId={message.id}>
       <Message align={mine ? "end" : "start"}>
         {!mine && (
-          <MessageAvatar className="size-8 text-xs font-semibold">
-            {getInitials(message.user.email)}
-          </MessageAvatar>
+          <Avvatars value={message?.user?.email} type="shape" />
         )}
         <MessageContent>
           <MessageHeader>
@@ -186,9 +184,7 @@ function ConversationIcon({
 
   const counterpart = getCounterpart(conversation, email);
   return (
-    <Avatar>
-      <AvatarFallback>{getInitials(counterpart?.email ?? "?")}</AvatarFallback>
-    </Avatar>
+    <Avvatars value={counterpart?.email ?? "_"} type="shape" />
   );
 }
 
@@ -852,12 +848,10 @@ export default function ChatRoom({ embedded = false }: { embedded?: boolean }) {
                       key={member.id}
                       size="sm"
                       variant={isSelf ? "muted" : "default"}
+                      data-isself={isSelf}
+                      className="data-[isself=true]:opacity-50 data-[isself=true]:pointer-events-none"
                     >
-                      <Avatar size="sm">
-                        <AvatarFallback>
-                          {getInitials(member.email)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <Avvatars value={member.email} type="shape" />
                       <ItemContent>
                         <ItemTitle className="w-full truncate">
                           {member.email}

@@ -7,6 +7,7 @@ import {
   LogOut,
   MessagesSquare,
   ShieldCheck,
+  UsersRound,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -38,6 +39,9 @@ import {
 import { toast } from "@/components/ui/toast";
 import { useAuthMutations } from "@/service/mutations";
 import { useCurrentUser } from "@/service/query";
+import logo from "@/public/logoipsum-361.svg"
+import Image from "next/image";
+import Avvatars from "../ui/use-avatars";
 
 const workspaceItems = [
   { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -45,6 +49,8 @@ const workspaceItems = [
 ];
 
 const manageItems = [
+  { title: "Workspaces", href: "/workspaces", icon: LayoutDashboard },
+  { title: "Peoples", href: "/peoples", icon: UsersRound },
   { title: "Security", href: "/security", icon: ShieldCheck },
   { title: "Tasks", href: "/tasks", icon: ListTodo },
 ];
@@ -97,12 +103,12 @@ export default function AppSidebar() {
               tooltip="FastAPI"
               render={<Link href="/dashboard" />}
             >
-              <span className="flex size-8 items-center justify-center rounded-lg border">
-                <Zap size={12} className="fill-primary stroke-primary" />
-              </span>
+              <div className="size-10 grid place-items-center">
+                <Image src={logo} width={200} height={200} alt="Logo" className="size-full" />
+              </div>
               <span className="grid flex-1 text-left leading-tight">
                 <span className="truncate font-heading font-semibold">
-                  FastAPI
+                  Task Management
                 </span>
               </span>
             </SidebarMenuButton>
@@ -157,9 +163,7 @@ export default function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
-                <Avatar size="sm">
-                  <AvatarFallback>{getInitials(email)}</AvatarFallback>
-                </Avatar>
+                <Avvatars value={email ?? "_"} type='shape' />
                 <span className="grid flex-1 text-left leading-tight">
                   <span className="truncate font-medium">
                     {email ?? "Loading..."}

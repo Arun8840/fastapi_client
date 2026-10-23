@@ -7,7 +7,7 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import Droppable from "@/components/ui/droppable";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import KanbanCardContainer from "./card-container";
 import { useTaskMutations } from "@/service/mutations";
 import { Inbox, Trash, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@base-ui/react";
 
 interface KanbanRootProps {
   values: TasksResponse[];
@@ -138,19 +139,22 @@ export default function KanbanRoot({ values }: KanbanRootProps) {
           >
             <KanbanCardContainer
               title={board.title}
-              description={board.description}
+              // description={board.description}
               color={board?.color}
             >
               {hasItems ?
-                <div className="w-full divide-y">
+                <div className="w-full">
                   {
                     taskState[board.id].map((task, index) => (
-                      <TaskListItem
-                        key={task.id}
-                        task={task}
-                        index={index}
-                        column={board.id}
-                      />
+                      <Fragment key={task?.id}>
+                        <TaskListItem
+                          key={task.id}
+                          task={task}
+                          index={index}
+                          column={board.id}
+                        />
+                        <Separator orientation="horizontal" className="w-full h-px bg-muted my-1 last:hidden" />
+                      </Fragment>
                     ))
                   }
                 </div>
@@ -160,6 +164,7 @@ export default function KanbanRoot({ values }: KanbanRootProps) {
                 </div>
               }
             </KanbanCardContainer>
+
           </Droppable>
         })}
       </section>
@@ -189,7 +194,7 @@ function TaskListItem({
       ref={ref}
       data-dragging={isDragging || undefined}
       className={cn(
-        "cursor-grab touch-none space-y-2 p-2 hover:bg-secondary transition-colors group/list_item",
+        "cursor-grab touch-none space-y-2 p-2 hover:bg-secondary transition-colors group/list_item rounded",
         isDragging && "cursor-grabbing bg-primary/50",
         isDropTarget && "ring ring-primary/40",
       )}
