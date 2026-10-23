@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   ArrowUpRight,
   ListTodo,
@@ -12,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const sections = [
   {
@@ -34,9 +36,27 @@ const sections = [
   },
 ];
 
-export default function DashboardPage() {
+export function DashboardSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+      <div className="space-y-1">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-36 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       <div className="space-y-1">
         <h1 className="font-heading text-2xl font-semibold tracking-tight">
           Dashboard
@@ -62,8 +82,7 @@ export default function DashboardPage() {
               </CardHeader>
             </Card>
           </Link>
-        ))}
       </div>
-    </div>
+    </Suspense>
   );
 }
