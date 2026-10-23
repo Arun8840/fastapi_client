@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/toast";
 import TanstackQueryProvider from "@/providers/query-client-provider";
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 const outfitHeading = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
@@ -40,7 +41,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <NuqsAdapter>
+              {children}
+            </NuqsAdapter>
             <Toaster />
           </ThemeProvider>
         </TanstackQueryProvider>

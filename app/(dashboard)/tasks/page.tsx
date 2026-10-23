@@ -1,7 +1,11 @@
-import TaskPageRoot from "@/modules/tasks";
+import { Suspense } from "react";
+
+import TaskPageRoot, { KanbanSkeleton } from "@/modules/tasks";
 
 export default function TasksPage() {
   return (
-    <TaskPageRoot />
+    <Suspense fallback={<KanbanSkeleton />}>
+      <TaskPageRoot />
+    </Suspense>
   );
 }
