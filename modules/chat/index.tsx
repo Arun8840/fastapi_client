@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   History,
@@ -12,8 +12,8 @@ import {
   SendHorizontal,
   TriangleAlert,
   Users,
-} from "lucide-react"
-import Link from "next/link"
+} from "lucide-react";
+import Link from "next/link";
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -21,20 +21,19 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react"
+} from "react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Bubble, BubbleContent } from "@/components/ui/bubble"
-import { Button } from "@/components/ui/button"
-import { ModeToggle } from "@/components/ui/dark-mode-switcher"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
+import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
+} from "@/components/ui/empty";
 import {
   Item,
   ItemActions,
@@ -42,14 +41,14 @@ import {
   ItemDescription,
   ItemGroup,
   ItemTitle,
-} from "@/components/ui/item"
+} from "@/components/ui/item";
 import {
   Message,
   MessageAvatar,
   MessageContent,
   MessageFooter,
   MessageHeader,
-} from "@/components/ui/message"
+} from "@/components/ui/message";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -57,20 +56,20 @@ import {
   MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
-} from "@/components/ui/message-scroller"
+} from "@/components/ui/message-scroller";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
-import { useChatSocket } from "@/hooks/use-chat-socket"
-import { cn } from "@/lib/utils"
-import { getApiErrorMessage } from "@/service/controller/api-client"
-import { chatKeys } from "@/service/keys/chat-keys"
+} from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { useChatSocket } from "@/hooks/use-chat-socket";
+import { cn } from "@/lib/utils";
+import { getApiErrorMessage } from "@/service/controller/api-client";
+import { chatKeys } from "@/service/keys/chat-keys";
 import {
   useChatMessages,
   useChatUsers,
@@ -78,70 +77,70 @@ import {
   useCurrentUser,
   useMarkConversationRead,
   useStartDirectConversation,
-} from "@/service/query"
+} from "@/service/query";
 import type {
   ChatMessage,
   ChatSocketStatus,
   Conversation,
   ConversationKind,
-} from "@/types"
+} from "@/types";
 
 const STATUS: Record<ChatSocketStatus, { label: string; dot: string }> = {
   open: { label: "Live", dot: "bg-emerald-500" },
   connecting: { label: "Connecting", dot: "animate-pulse bg-amber-500" },
   closed: { label: "Offline", dot: "bg-zinc-400" },
   error: { label: "Error", dot: "bg-red-500" },
-}
+};
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
-})
+});
 
 function formatTime(value: string) {
-  return timeFormatter.format(new Date(value))
+  return timeFormatter.format(new Date(value));
 }
 
 function getInitials(email: string) {
-  const name = email.split("@")[0] ?? email
-  const parts = name.split(/[.\-_ ]+/).filter(Boolean)
+  const name = email.split("@")[0] ?? email;
+  const parts = name.split(/[.\-_ ]+/).filter(Boolean);
   const initials = parts
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("")
+    .join("");
 
-  return initials || "?"
+  return initials || "?";
 }
 
 function formatTyping(emails: string[]) {
-  const names = emails.map((email) => email.split("@")[0] ?? email)
+  const names = emails.map((email) => email.split("@")[0] ?? email);
 
-  if (names.length === 1) return `${names[0]} is typing…`
-  if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`
-  return `${names[0]} and ${names.length - 1} others are typing…`
+  if (names.length === 1) return `${names[0]} is typing…`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
+  return `${names[0]} and ${names.length - 1} others are typing…`;
 }
 
 /** The person on the other side of a DM; the room has no single counterpart. */
 function getCounterpart(conversation: Conversation, email?: string) {
-  if (conversation.kind === "room") return null
+  if (conversation.kind === "room") return null;
   return (
     conversation.participants.find((item) => item.email !== email) ??
     conversation.participants[0] ??
     null
-  )
+  );
 }
 
 function conversationTitle(conversation: Conversation, email?: string) {
-  if (conversation.kind === "room") return "Room"
-  return getCounterpart(conversation, email)?.email ?? "Direct message"
+  if (conversation.kind === "room") return "Room";
+  return getCounterpart(conversation, email)?.email ?? "Direct message";
 }
 
 function MessageRow({
   message,
   mine,
 }: {
-  message: ChatMessage
-  mine: boolean
+  message: ChatMessage;
+  mine: boolean;
 }) {
   return (
     <MessageScrollerItem messageId={message.id}>
@@ -167,32 +166,30 @@ function MessageRow({
         </MessageContent>
       </Message>
     </MessageScrollerItem>
-  )
+  );
 }
 
 function ConversationIcon({
   conversation,
   email,
 }: {
-  conversation: Conversation
-  email?: string
+  conversation: Conversation;
+  email?: string;
 }) {
   if (conversation.kind === "room") {
     return (
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <MessagesSquare className="size-5" />
       </span>
-    )
+    );
   }
 
-  const counterpart = getCounterpart(conversation, email)
+  const counterpart = getCounterpart(conversation, email);
   return (
     <Avatar>
-      <AvatarFallback>
-        {getInitials(counterpart?.email ?? "?")}
-      </AvatarFallback>
+      <AvatarFallback>{getInitials(counterpart?.email ?? "?")}</AvatarFallback>
     </Avatar>
-  )
+  );
 }
 
 function ConversationRow({
@@ -201,23 +198,25 @@ function ConversationRow({
   active,
   onSelect,
 }: {
-  conversation: Conversation
-  email?: string
-  active: boolean
-  onSelect: () => void
+  conversation: Conversation;
+  email?: string;
+  active: boolean;
+  onSelect: () => void;
 }) {
-  const lastMessage = conversation.last_message
-  const counterpart = getCounterpart(conversation, email)
+  const lastMessage = conversation.last_message;
+  const counterpart = getCounterpart(conversation, email);
   const title =
-    conversation.kind === "room" ? "Room" : (counterpart?.email ?? "Direct message")
+    conversation.kind === "room"
+      ? "Room"
+      : (counterpart?.email ?? "Direct message");
   // While a thread is open its messages are being read, so do not flash a badge
   // before the server round-trip clears it.
-  const unread = active ? 0 : conversation.unread_count
+  const unread = active ? 0 : conversation.unread_count;
   const preview = lastMessage
     ? `${lastMessage.user.email === email ? "You: " : ""}${lastMessage.content}`
     : conversation.kind === "room"
       ? "Everyone in the workspace"
-      : "No messages yet"
+      : "No messages yet";
 
   return (
     <button
@@ -251,7 +250,7 @@ function ConversationRow({
         </span>
       </span>
     </button>
-  )
+  );
 }
 
 function ConversationListSkeleton() {
@@ -267,13 +266,13 @@ function ConversationListSkeleton() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
-export default function ChatRoom() {
-  const queryClient = useQueryClient()
-  const { data: user } = useCurrentUser()
-  const email = user?.data?.email
+export default function ChatRoom({ embedded = false }: { embedded?: boolean }) {
+  const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
+  const email = user?.data?.email;
   const {
     status,
     messages: liveFrames,
@@ -282,48 +281,47 @@ export default function ChatRoom() {
     reconnect,
     sendMessage,
     sendTyping,
-  } = useChatSocket()
+  } = useChatSocket();
   const {
     data: conversationsData,
     isPending: isConversationsPending,
     isError: isConversationsError,
     refetch: refetchConversations,
-  } = useConversations()
+  } = useConversations();
   const {
     data: users,
     isPending: isUsersPending,
     isError: isUsersError,
     refetch: refetchUsers,
-  } = useChatUsers()
-  const startDirect = useStartDirectConversation()
-  const { mutate: markRead } = useMarkConversationRead()
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [mobileList, setMobileList] = useState(false)
-  const [draft, setDraft] = useState("")
-  const [peopleOpen, setPeopleOpen] = useState(false)
-  const handledMessageRef = useRef<string | null>(null)
+  } = useChatUsers();
+  const startDirect = useStartDirectConversation();
+  const { mutate: markRead } = useMarkConversationRead();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [mobileList, setMobileList] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const handledMessageRef = useRef<string | null>(null);
 
   const conversations = useMemo(
     () => conversationsData?.data ?? [],
     [conversationsData],
-  )
+  );
   const room = useMemo(
     () => conversations.find((item) => item.kind === "room"),
     [conversations],
-  )
+  );
   // Before the user picks a thread, the room is the default.
   const activeConversation = useMemo(
-    () =>
-      conversations.find((item) => item.id === activeId) ?? room ?? null,
+    () => conversations.find((item) => item.id === activeId) ?? room ?? null,
     [conversations, activeId, room],
-  )
-  const activeConversationId = activeConversation?.id ?? null
+  );
+  const activeConversationId = activeConversation?.id ?? null;
   const counterpart = activeConversation
     ? getCounterpart(activeConversation, email)
-    : null
+    : null;
   const activeTitle = activeConversation
     ? conversationTitle(activeConversation, email)
-    : "Chat"
+    : "Chat";
 
   const {
     data: history,
@@ -333,19 +331,19 @@ export default function ChatRoom() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useChatMessages(activeConversationId)
+  } = useChatMessages(activeConversationId);
 
   /**
    * Pages arrive newest-first ([page0 = newest]). Reverse the page order, then
    * reverse each page, to get one ascending timeline for rendering.
    */
   const historyMessages = useMemo(() => {
-    if (!history) return []
+    if (!history) return [];
 
     return [...history.pages]
       .reverse()
-      .flatMap((page) => [...(page.data?.items ?? [])].reverse())
-  }, [history])
+      .flatMap((page) => [...(page.data?.items ?? [])].reverse());
+  }, [history]);
 
   const liveMessages = useMemo(
     () =>
@@ -353,7 +351,7 @@ export default function ChatRoom() {
         (message) => message.conversation_id === activeConversationId,
       ),
     [liveFrames, activeConversationId],
-  )
+  );
 
   /**
    * History and live frames overlap: a message that arrived over the socket is
@@ -361,33 +359,33 @@ export default function ChatRoom() {
    * it. Dedupe by the server-issued id and sort chronologically.
    */
   const messages = useMemo(() => {
-    const byId = new Map<string, ChatMessage>()
+    const byId = new Map<string, ChatMessage>();
 
-    for (const message of historyMessages) byId.set(message.id, message)
-    for (const message of liveMessages) byId.set(message.id, message)
+    for (const message of historyMessages) byId.set(message.id, message);
+    for (const message of liveMessages) byId.set(message.id, message);
 
     return [...byId.values()].sort((a, b) => {
-      const delta = Date.parse(a.created_at) - Date.parse(b.created_at)
-      return delta !== 0 ? delta : a.id.localeCompare(b.id)
-    })
-  }, [historyMessages, liveMessages])
+      const delta = Date.parse(a.created_at) - Date.parse(b.created_at);
+      return delta !== 0 ? delta : a.id.localeCompare(b.id);
+    });
+  }, [historyMessages, liveMessages]);
 
   // A message for the open thread means it has been read; anything else only
   // refreshes the sidebar preview and its unread badge.
-  const lastFrame = liveFrames.at(-1)
+  const lastFrame = liveFrames.at(-1);
   useEffect(() => {
-    if (!lastFrame || handledMessageRef.current === lastFrame.id) return
-    handledMessageRef.current = lastFrame.id
+    if (!lastFrame || handledMessageRef.current === lastFrame.id) return;
+    handledMessageRef.current = lastFrame.id;
 
     if (lastFrame.conversation_id === activeConversationId) {
-      markRead(lastFrame.conversation_id)
+      markRead(lastFrame.conversation_id);
     } else {
-      void queryClient.invalidateQueries({ queryKey: chatKeys.conversations })
+      void queryClient.invalidateQueries({ queryKey: chatKeys.conversations });
     }
-  }, [lastFrame, activeConversationId, markRead, queryClient])
+  }, [lastFrame, activeConversationId, markRead, queryClient]);
 
-  const connected = status === "open"
-  const statusInfo = STATUS[status]
+  const connected = status === "open";
+  const statusInfo = STATUS[status];
   // The server already excludes the sender, but filtering here also covers two
   // tabs signed in with the same account.
   const typers = useMemo(
@@ -398,75 +396,80 @@ export default function ChatRoom() {
           typer.email !== email,
       ),
     [typingUsers, activeConversationId, email],
-  )
+  );
   // Put yourself first, then sort everyone else alphabetically.
   const members = useMemo(() => {
-    const list = users?.data ?? []
+    const list = users?.data ?? [];
 
     return [...list].sort((a, b) => {
-      if (a.email === b.email) return 0
-      if (a.email === email) return -1
-      if (b.email === email) return 1
-      return a.email.localeCompare(b.email)
-    })
-  }, [users, email])
+      if (a.email === b.email) return 0;
+      if (a.email === email) return -1;
+      if (b.email === email) return 1;
+      return a.email.localeCompare(b.email);
+    });
+  }, [users, email]);
 
   const selectConversation = (conversationId: string) => {
     if (conversationId === activeConversationId) {
-      setMobileList(false)
-      return
+      setMobileList(false);
+      return;
     }
-    if (activeConversationId) sendTyping(false, activeConversationId)
-    setActiveId(conversationId)
-    setDraft("")
-    setMobileList(false)
-  }
+    if (activeConversationId) sendTyping(false, activeConversationId);
+    setActiveId(conversationId);
+    setDraft("");
+    setMobileList(false);
+  };
 
   const openDirect = (memberId: string) => {
     startDirect.mutate(memberId, {
       onSuccess: (response) => {
-        const conversation = response.data
-        if (!conversation) return
-        if (activeConversationId) sendTyping(false, activeConversationId)
-        setActiveId(conversation.id)
-        setDraft("")
-        setMobileList(false)
-        setPeopleOpen(false)
+        const conversation = response.data;
+        if (!conversation) return;
+        if (activeConversationId) sendTyping(false, activeConversationId);
+        setActiveId(conversation.id);
+        setDraft("");
+        setMobileList(false);
+        setPeopleOpen(false);
       },
-    })
-  }
+    });
+  };
 
   const submit = () => {
-    if (!activeConversationId) return
+    if (!activeConversationId) return;
     // Clear the indicator immediately instead of waiting for the TTL.
-    sendTyping(false, activeConversationId)
-    if (!sendMessage(draft, activeConversationId)) return
-    setDraft("")
-  }
+    sendTyping(false, activeConversationId);
+    if (!sendMessage(draft, activeConversationId)) return;
+    setDraft("");
+  };
 
   const handleChange = (value: string) => {
-    setDraft(value)
+    setDraft(value);
     if (activeConversationId) {
-      sendTyping(value.trim().length > 0, activeConversationId)
+      sendTyping(value.trim().length > 0, activeConversationId);
     }
-  }
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    submit()
-  }
+    event.preventDefault();
+    submit();
+  };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault()
-      submit()
+      event.preventDefault();
+      submit();
     }
-  }
+  };
 
   return (
-    <section className="flex h-svh flex-col bg-muted/30">
-      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 p-3 sm:p-6">
-        <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10">
+    <section
+      className={cn(
+        "flex flex-col bg-muted/30",
+        embedded ? "min-h-0 flex-1" : "h-svh",
+      )}
+    >
+      <div className="flex min-h-0 w-full flex-1">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           <aside
             className={cn(
               "w-full shrink-0 flex-col border-r md:flex md:w-72",
@@ -538,18 +541,6 @@ export default function ChatRoom() {
                 </nav>
               )}
             </div>
-
-            <footer className="flex shrink-0 items-center gap-2 border-t px-3 py-2">
-              <Avatar size="sm">
-                <AvatarFallback>
-                  {email ? getInitials(email) : "?"}
-                </AvatarFallback>
-              </Avatar>
-              <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-                {email ?? "Loading your session…"}
-              </p>
-              <ModeToggle />
-            </footer>
           </aside>
 
           <div
@@ -707,8 +698,7 @@ export default function ChatRoom() {
                                 key={message.id}
                                 message={message}
                                 mine={
-                                  Boolean(email) &&
-                                  message.user.email === email
+                                  Boolean(email) && message.user.email === email
                                 }
                               />
                             ))}
@@ -764,7 +754,7 @@ export default function ChatRoom() {
                   onKeyDown={handleKeyDown}
                   onBlur={() => {
                     if (activeConversationId) {
-                      sendTyping(false, activeConversationId)
+                      sendTyping(false, activeConversationId);
                     }
                   }}
                   placeholder={
@@ -852,10 +842,10 @@ export default function ChatRoom() {
             ) : (
               <ItemGroup className="gap-0.5">
                 {members.map((member) => {
-                  const isSelf = member.email === email
+                  const isSelf = member.email === email;
                   const isStarting =
                     startDirect.isPending &&
-                    startDirect.variables === member.id
+                    startDirect.variables === member.id;
 
                   return (
                     <Item
@@ -893,7 +883,7 @@ export default function ChatRoom() {
                         </ItemActions>
                       )}
                     </Item>
-                  )
+                  );
                 })}
               </ItemGroup>
             )}
@@ -901,7 +891,7 @@ export default function ChatRoom() {
         </SheetContent>
       </Sheet>
     </section>
-  )
+  );
 }
 
 function ConversationKindBadge({ kind }: { kind: ConversationKind }) {
@@ -910,12 +900,12 @@ function ConversationKindBadge({ kind }: { kind: ConversationKind }) {
       <Badge variant="secondary" className="shrink-0">
         Direct
       </Badge>
-    )
+    );
   }
 
   return (
     <Badge variant="outline" className="shrink-0">
       Room
     </Badge>
-  )
+  );
 }
