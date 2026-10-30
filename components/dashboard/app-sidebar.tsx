@@ -7,8 +7,8 @@ import {
   LogOut,
   MessagesSquare,
   ShieldCheck,
+  Sparkles,
   UsersRound,
-  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -46,6 +46,7 @@ import Avvatars from "../ui/use-avatars";
 const workspaceItems = [
   { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { title: "Chats", href: "/chats", icon: MessagesSquare },
+  { title: "Components", href: "/components", icon: Sparkles },
 ];
 
 const manageItems = [

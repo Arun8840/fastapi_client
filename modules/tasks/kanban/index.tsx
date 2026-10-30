@@ -15,14 +15,21 @@ import type { TasksResponse, UpdateTaskStatusType } from "@/types";
 
 import KanbanCardContainer from "./card-container";
 import { useTaskMutations } from "@/service/mutations";
-import { Inbox, Trash, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, Inbox, Trash, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@base-ui/react";
-
+import { motion } from "motion/react"
 interface KanbanRootProps {
   values: TasksResponse[];
 }
 
+type BoardType = {
+  id: StatusEnum;
+  title: string;
+  description: string;
+  color: string;
+  icon: React.ReactNode
+}
 type StatusEnum = "pending" | "in_progress" | "completed" | "cancelled";
 
 type TaskState = Record<StatusEnum, TasksResponse[]>;
@@ -30,17 +37,36 @@ type TaskState = Record<StatusEnum, TasksResponse[]>;
 const TASK_TYPE = "task";
 const COLUMN_COLLISION_PRIORITY = 1;
 
-const kanbanBoards: {
-  id: StatusEnum;
-  title: string;
-  description: string;
-  color: string
-}[] = [
-    { id: "pending", title: "Pending", description: "Pending tasks", color: "bg-blue-500" },
-    { id: "in_progress", title: "In Progress", description: "In Progress tasks", color: "bg-yellow-500" },
-    { id: "completed", title: "Completed", description: "Completed tasks", color: "bg-green-500" },
-    { id: "cancelled", title: "Cancelled", description: "Cancelled tasks", color: "bg-red-500" },
-  ];
+const kanbanBoards: BoardType[] = [
+  {
+    id: "pending",
+    title: "Pending",
+    description: "Pending tasks",
+    color: "#4f46e5",
+    icon: <Clock />
+  },
+  {
+    id: "in_progress",
+    title: "In Progress",
+    description: "In Progress tasks",
+    color: "#eab308",
+    icon: <Clock />
+  },
+  {
+    id: "completed",
+    title: "Completed",
+    description: "Completed tasks",
+    color: "#22c55e",
+    icon: <CheckCircle2 />
+  },
+  {
+    id: "cancelled",
+    title: "Cancelled",
+    description: "Cancelled tasks",
+    color: "#ef4444",
+    icon: <XCircle />
+  },
+];
 
 function createEmptyState(): TaskState {
   return {
@@ -76,6 +102,19 @@ function syncTaskStatuses(state: TaskState): TaskState {
   ) as TaskState;
 }
 
+
+
+const parentBoardVariant = {
+  from: { opacity: 0, y: 40 },
+  to: (boardIndex: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3,
+      delay: boardIndex * 0.15, // Stagger boards cleanly
+    }
+  })
+}
 export default function KanbanRoot({ values }: KanbanRootProps) {
   const { update_status } = useTaskMutations()
   const [taskState, setTaskState] = useState<TaskState>(() =>
@@ -83,6 +122,7 @@ export default function KanbanRoot({ values }: KanbanRootProps) {
   );
   const previousState = useRef(taskState);
   const isUpdating = update_status.isPending
+
 
   useEffect(() => {
     setTaskState(groupTasksByStatus(values));
@@ -127,45 +167,58 @@ export default function KanbanRoot({ values }: KanbanRootProps) {
       onDragEnd={handleDragEnd}
     >
       <section className="grid auto-rows-max gap-2 lg:grid-cols-4">
-        {kanbanBoards.map((board) => {
+        {kanbanBoards.map((board, boardIndex) => {
           const taskItems = taskState[board.id]
           const hasItems = Array.isArray(taskItems) && taskItems?.length > 0
-          return <Droppable
-            key={board.id}
-            id={board.id}
-            accept={TASK_TYPE}
-            collisionPriority={COLUMN_COLLISION_PRIORITY}
-            className="h-fit rounded-xl"
-          >
-            <KanbanCardContainer
-              title={board.title}
-              // description={board.description}
-              color={board?.color}
-            >
-              {hasItems ?
-                <div className="w-full">
-                  {
-                    taskState[board.id].map((task, index) => (
-                      <Fragment key={task?.id}>
-                        <TaskListItem
-                          key={task.id}
-                          task={task}
-                          index={index}
-                          column={board.id}
-                        />
-                        <Separator orientation="horizontal" className="w-full h-px bg-muted my-1 last:hidden" />
-                      </Fragment>
-                    ))
-                  }
-                </div>
-                :
-                <div className="p-6 rounded-lg">
-                  <p className="text-muted-foreground text-center text-sm flex flex-col items-center justify-center gap-2"><Inbox strokeWidth={1.3} />No tasks</p>
-                </div>
-              }
-            </KanbanCardContainer>
 
-          </Droppable>
+          return (
+            <motion.div
+              key={board?.id}
+              variants={parentBoardVariant}
+              initial="from"
+              animate="to"
+              custom={boardIndex}
+            >
+              <Droppable
+                id={board.id}
+                accept={TASK_TYPE}
+                collisionPriority={COLUMN_COLLISION_PRIORITY}
+                className="h-fit rounded-xl"
+              >
+                <KanbanCardContainer
+                  title={board.title}
+                  icon={board.icon}
+                  color={board.color}
+                >
+                  {hasItems ?
+                    <div className="w-full">
+                      {
+                        taskState[board.id].map((task, index) => (
+                          <Fragment
+                            key={task.id}
+                          >
+                            <TaskListItem
+                              task={task}
+                              index={index}
+                              column={board.id}
+
+                            />
+                            <Separator orientation="horizontal" className="w-full h-px bg-muted my-1 last:hidden" />
+                          </Fragment>
+                        ))
+                      }
+                    </div>
+                    :
+                    <div className="p-6 rounded-lg">
+                      <p className="text-muted-foreground text-center text-sm flex flex-col items-center justify-center gap-2">
+                        <Inbox strokeWidth={1.3} />No tasks
+                      </p>
+                    </div>
+                  }
+                </KanbanCardContainer>
+              </Droppable>
+            </motion.div>
+          )
         })}
       </section>
     </DragDropProvider>
@@ -194,9 +247,9 @@ function TaskListItem({
       ref={ref}
       data-dragging={isDragging || undefined}
       className={cn(
-        "cursor-grab touch-none space-y-2 p-2 hover:bg-secondary transition-colors group/list_item rounded",
-        isDragging && "cursor-grabbing bg-primary/50",
-        isDropTarget && "ring ring-primary/40",
+        "cursor-grab touch-none space-y-2 p-3 hover:scale-[.98] transition-all group/list_item rounded-lg bg-card",
+        isDragging && "cursor-grabbing",
+        isDropTarget && "shadow-lg",
       )}
     >
       <div className="flex">
