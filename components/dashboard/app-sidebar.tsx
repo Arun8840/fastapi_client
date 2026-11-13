@@ -2,6 +2,7 @@
 
 import {
   ChevronsUpDown,
+  Code,
   Flashlight,
   LayoutDashboard,
   ListTodo,
@@ -55,7 +56,7 @@ const manageItems = [
   { title: "Peoples", href: "/peoples", icon: UsersRound },
   { title: "Security", href: "/security", icon: ShieldCheck },
   { title: "Tasks", href: "/tasks", icon: ListTodo },
-  { title: "Practices", href: "/practices", icon: Flashlight },
+  { title: "DSA", href: "/practices", icon: Code },
 ];
 
 function getInitials(email?: string) {

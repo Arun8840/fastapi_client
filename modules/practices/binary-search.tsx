@@ -1,4 +1,5 @@
 "use client"
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
@@ -44,28 +45,19 @@ export default function BinarySearchVisualizer() {
 
   while (low <= high) {
    const mid = Math.floor((low + high) / 2)
-   debugger
    const value = values[mid]
-   debugger
    if (value === target) {
-    debugger
     computedSteps.push({ mid, value, low, high, result: 'found' })
-    debugger
     targetIdx = mid
-    debugger
     break
    }
 
    if (value < target) {
-    debugger
     computedSteps.push({ mid, value, low, high, result: 'too-small' })
     low = mid + 1
-    debugger
    } else {
-    debugger
     computedSteps.push({ mid, value, low, high, result: 'too-large' })
     high = mid - 1
-    debugger
    }
   }
 
@@ -80,16 +72,37 @@ export default function BinarySearchVisualizer() {
  return (
   <Card>
    <CardHeader>
-    <CardTitle>Binary Search Visualizer</CardTitle>
-    <CardDescription className='space-y-2'>
-     <p> Watch how the low, high, and mid pointers halve the search space step-by-step.</p>
-     <p className='text-white bg-primary/40 p-2 rounded-lg border border-primary'>
-      Binary search only works on <span className='font-semibold text-yellow-300'>sorted</span> arrays.
-     </p>
+    <CardTitle>Binary Search</CardTitle>
+    <CardDescription>
+     Questions for Binary Search
     </CardDescription>
+    <div className='flex gap-2 pt-2'>
+     <Badge variant='default' className='h-7 px-3 text-sm'>Time: O(log n)</Badge>
+     <Badge variant='default' className='h-7 px-3 text-sm'>Space: O(1)</Badge>
+    </div>
    </CardHeader>
-   <CardContent className="space-y-4">
-    <FieldGroup>
+   <CardContent className="space-y-2">
+    <p>
+     <span className='text-orange-400'>Problem</span> : Given a sorted array of integers nums and an integer target, return the index of target, or -1 if it does not exist.
+    </p>
+    <p>
+     <span className='text-sky-500'>Example</span> : nums = [ 2, 5, 8, 12, 16, 23, 38, 56, 72, 91 ], target = 23 → Answer = 5
+    </p>
+
+    <h1 className='text-emerald-500'>Explanation</h1>
+    <p className='bg-lime-200 text-black font-medium p-3 rounded-lg'>
+     Keep two pointers, low at the start and high at the end. Check the middle element.
+     If it equals the target, we found it. If it is smaller than the target, move low after the middle.
+     If it is larger, move high before the middle. Each step cuts the search space in half,
+     so it runs in O(log n) time.
+    </p>
+
+    <p className='bg-sky-200 text-black font-medium p-3 rounded-lg'>
+     <span className='text-emerald-600 font-semibold'>Advantage of Binary Search</span> : Very fast on sorted arrays (O(log n)).
+     It needs no extra memory (O(1) space) and only a few index variables.
+    </p>
+
+    <FieldGroup className='pt-2'>
      <FieldSet>
       <FieldLabel>Sorted Values</FieldLabel>
       <Input value={numsStr} onChange={(e) => setNumsStr(e.target.value)} placeholder='e.g. 2, 5, 8, 12, 16, 23' />

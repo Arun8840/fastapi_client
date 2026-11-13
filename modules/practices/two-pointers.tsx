@@ -1,4 +1,5 @@
 "use client"
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
@@ -62,11 +63,33 @@ export default function TwoPointers() {
      Two Pointer Method
     </CardTitle>
     <CardDescription>
-     Find two values whose sum equals the target using the two pointer method.
+     Questions for Two Pointers
     </CardDescription>
+    <div className='flex gap-2 pt-2'>
+     <Badge variant='default' className='h-7 px-3 text-sm'>Time: O(n)</Badge>
+     <Badge variant='default' className='h-7 px-3 text-sm'>Space: O(1)</Badge>
+    </div>
    </CardHeader>
-   <CardContent>
-    <FieldGroup>
+   <CardContent className='space-y-2'>
+    <p>
+     <span className='text-orange-400'>Problem</span> : Given a sorted array of integers nums and an integer target, return the positions of the two numbers that add up to target.
+    </p>
+    <p>
+     <span className='text-sky-500'>Example</span> : nums = [ 1, 2, 4, 5, 6, 7 ], target = 10 → Answer = [ 3 : 5 ]
+    </p>
+
+    <h1 className='text-emerald-500'>Explanation</h1>
+    <p className='bg-lime-200 text-black font-medium p-3 rounded-lg'>
+     Place one pointer on the first number (left) and one on the last number (right).
+     Add the two values together. If the sum is smaller than the target, move the left pointer forward.
+     If the sum is bigger than the target, move the right pointer backward.
+     If the sum equals the target, we found the answer.
+     Because the array is sorted, each step safely removes one number and never needs to go back, so it runs in O(n) time.
+    </p>
+
+    <p className='text-green-500'>Ans = {ans ? (ans.positions.length > 0 ? `[${ans.positions.join(' : ')}]` : 'Not found') : '—'}</p>
+
+    <FieldGroup className='pt-2'>
      <FieldSet>
       <FieldLabel>Enter Values</FieldLabel>
       <Input value={nums} onChange={handleChangeNums} placeholder='example: 8, 4, 2, 1, 3, 5, 7, 6' />
@@ -76,16 +99,26 @@ export default function TwoPointers() {
       <Input value={target} onChange={handleChangeTarget} placeholder='example: 10' type='number' />
      </FieldSet>
     </FieldGroup>
+
     {ans && (
      ans.positions.length > 0 ? (
-      <p className="mt-4 font-semibold text-xl">
+      <p className="font-semibold text-xl">
        {ans.values[0]} + {ans.values[1]} = {target} at positions [{ans.positions.join(' : ')}]
       </p>
      ) : (
-      <p className="mt-4 font-semibold text-xl">No two values add up to {target}</p>
+      <p className="font-semibold text-xl">No two values add up to {target}</p>
      )
     )}
    </CardContent>
+   <CardFooter className='flex flex-col items-start gap-2'>
+    <p className='font-medium'>
+     This two pointer method uses the same target idea as the two-sum problem, but it works only on a sorted array and uses no extra memory. Hashing finds the pair in any order but stores values in a map, while two pointers is faster to write and uses O(1) extra space.
+    </p>
+    <p className='bg-sky-200 text-black font-medium p-3 rounded-lg w-full'>
+     <span className='text-emerald-600 font-semibold'>Advantage of Two Pointers</span> : Two pointers uses no extra memory (O(1) space).
+     It needs only two index variables, while hashing stores every value in a map (O(n) space).
+    </p>
+   </CardFooter>
    <CardFooter className='justify-end'>
     <Button disabled={isDisabled} type='button' onClick={findSumOfTwo}>
      Find ans
