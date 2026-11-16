@@ -2,6 +2,7 @@ import BinarySearch from './binary-search';
 import CharacterCounter from './char-counter';
 import Hashing from './hashing';
 import ReverseStringFormatter from './reverse-string';
+import SlidingWindow from './sliding-window';
 import TwoPointers from './two-pointers';
 
 export default function PracticesRoot() {
@@ -13,6 +14,7 @@ export default function PracticesRoot() {
     <ReverseStringFormatter />
     <Hashing />
     <TwoPointers />
+    <SlidingWindow />
     <BinarySearch />
    </div>
   </section>
