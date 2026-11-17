@@ -26,7 +26,6 @@ export default function SlidingWindow() {
   const k = Number(kStr)
   const isDisabled = !numsStr || !kStr || k <= 0 || k > parsedNums.length
 
-  console.log(parsedNums)
   const maxSumOfWindow = (numbers: number[], size: number) => {
     let windowSum = 0
     debugger
@@ -44,6 +43,8 @@ export default function SlidingWindow() {
 
     debugger
     for (let i = size;i < numbers.length;i++) {
+      debugger
+      console.log(numbers[i], numbers[i - size])
       debugger
       windowSum += numbers[i] - numbers[i - size]
       debugger
