@@ -6,10 +6,21 @@ import { FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import React, { useState } from 'react';
 
+type Step = {
+ left: number;
+ right: number;
+ sum: number;
+ result: 'found' | 'too-small' | 'too-large';
+}
+
 export default function TwoPointers() {
  const [nums, setNums] = useState("")
  const [target, setTarget] = useState("")
- const [ans, setAns] = useState<{ positions: number[]; values: number[] } | null>(null)
+ const [parsedNums, setParsedNums] = useState<number[]>([])
+ const [steps, setSteps] = useState<Step[]>([])
+ const [currentStepIndex, setCurrentStepIndex] = useState<number>(0)
+ const [foundPositions, setFoundPositions] = useState<number[]>([])
+ const [hasSearched, setHasSearched] = useState(false)
 
  const handleChangeNums = (e: React.ChangeEvent<HTMLInputElement>) => {
   setNums(e.target.value)
@@ -21,25 +32,6 @@ export default function TwoPointers() {
 
  const isDisabled = !nums || !target
 
- const twoSumSorted = (numbers: number[], target: number) => {
-  let left = 0
-  let right = numbers.length - 1
-
-  while (left < right) {
-   const currentSum = numbers[left] + numbers[right]
-
-   if (currentSum === target) {
-    return [left + 1, right + 1]
-   } else if (currentSum < target) {
-    left++
-   } else {
-    right--
-   }
-  }
-
-  return []
- }
-
  const findSumOfTwo = () => {
   if (isDisabled) return
 
@@ -50,11 +42,39 @@ export default function TwoPointers() {
    .filter((n) => !Number.isNaN(n))
    .sort((a, b) => a - b)
 
-  const positions = twoSumSorted(values, Number(target))
-  const pair = positions.map((p) => values[p - 1])
+  setParsedNums(values)
 
-  setAns({ positions, values: pair })
+  const targetNum = Number(target)
+  let left = 0
+  let right = values.length - 1
+  const computedSteps: Step[] = []
+  let positions: number[] = []
+
+  while (left < right) {
+   const sum = values[left] + values[right]
+
+   if (sum === targetNum) {
+    computedSteps.push({ left, right, sum, result: 'found' })
+    positions = [left + 1, right + 1]
+    break
+   }
+
+   if (sum < targetNum) {
+    computedSteps.push({ left, right, sum, result: 'too-small' })
+    left++
+   } else {
+    computedSteps.push({ left, right, sum, result: 'too-large' })
+    right--
+   }
+  }
+
+  setSteps(computedSteps)
+  setFoundPositions(positions)
+  setCurrentStepIndex(0)
+  setHasSearched(true)
  }
+
+ const activeStep = steps[currentStepIndex]
 
  return (
   <Card>
@@ -87,8 +107,6 @@ export default function TwoPointers() {
      Because the array is sorted, each step safely removes one number and never needs to go back, so it runs in O(n) time.
     </p>
 
-    <p className='text-green-500'>Ans = {ans ? (ans.positions.length > 0 ? `[${ans.positions.join(' : ')}]` : 'Not found') : '—'}</p>
-
     <FieldGroup className='pt-2'>
      <FieldSet>
       <FieldLabel>Enter Values</FieldLabel>
@@ -100,14 +118,87 @@ export default function TwoPointers() {
      </FieldSet>
     </FieldGroup>
 
-    {ans && (
-     ans.positions.length > 0 ? (
-      <p className="font-semibold text-xl">
-       {ans.values[0]} + {ans.values[1]} = {target} at positions [{ans.positions.join(' : ')}]
-      </p>
-     ) : (
-      <p className="font-semibold text-xl">No two values add up to {target}</p>
-     )
+    {hasSearched && parsedNums.length > 0 && (
+     <div className="space-y-4 pt-2 border-t">
+      {/* Visual Array Grid */}
+      <div>
+       <p className="text-xs font-medium text-muted-foreground mb-2">Array & Pointer Positions:</p>
+       <div className="flex flex-wrap gap-1.5">
+        {parsedNums.map((num, idx) => {
+         const isLeft = activeStep && idx === activeStep.left;
+         const isRight = activeStep && idx === activeStep.right;
+         const isInRange = activeStep && idx >= activeStep.left && idx <= activeStep.right;
+         const isMatch = activeStep?.result === 'found' && (idx === activeStep.left || idx === activeStep.right);
+
+         return (
+          <div
+           key={idx}
+           className={`flex flex-col items-center justify-center w-12 h-14 rounded border text-sm font-semibold transition-all ${isMatch
+            ? 'bg-green-600 text-white border-green-600 ring-2 ring-green-400/40'
+            : isInRange
+             ? 'bg-secondary text-secondary-foreground border-border'
+             : 'bg-muted/40 text-muted-foreground border-transparent opacity-40'
+            }`}
+          >
+           <span>{num}</span>
+           <span className="text-[10px] font-normal mt-0.5">
+            {isLeft && isRight ? 'L R' : isLeft ? 'L' : isRight ? 'R' : ''}
+           </span>
+          </div>
+         );
+        })}
+       </div>
+      </div>
+
+      {/* Step Controls & Summary */}
+      {steps.length > 0 && activeStep && (
+       <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+        <div className="flex items-center justify-between">
+         <span className="text-sm font-medium">
+          Step {currentStepIndex + 1} of {steps.length}
+         </span>
+         <div className="space-x-2">
+          <Button
+           size="sm"
+           variant="outline"
+           disabled={currentStepIndex === 0}
+           onClick={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
+          >
+           Previous
+          </Button>
+          <Button
+           size="sm"
+           variant="outline"
+           disabled={currentStepIndex === steps.length - 1}
+           onClick={() => setCurrentStepIndex((prev) => Math.min(steps.length - 1, prev + 1))}
+          >
+           Next
+          </Button>
+         </div>
+        </div>
+        <p className="text-sm text-muted-foreground">
+         Sum of positions [{activeStep.left}, {activeStep.right}]:{' '}
+         <strong className="text-foreground">{parsedNums[activeStep.left]} + {parsedNums[activeStep.right]} = {activeStep.sum}</strong>{' '}
+         —{' '}
+         {activeStep.result === 'found'
+          ? 'Match found!'
+          : activeStep.result === 'too-small'
+           ? 'Too small, shifting left pointer forward.'
+           : 'Too large, shifting right pointer backward.'}
+        </p>
+       </div>
+      )}
+
+      {foundPositions.length > 0 ? (
+       <p className="font-semibold text-lg text-green-600">
+        Success: {parsedNums[foundPositions[0] - 1]} + {parsedNums[foundPositions[1] - 1]} = {target} at positions [{foundPositions.join(' : ')}]!
+       </p>
+      ) : (
+       <p className="font-semibold text-lg text-red-500">
+        No two values add up to {target}.
+       </p>
+      )}
+     </div>
     )}
    </CardContent>
    <CardFooter className='flex flex-col items-start gap-2'>
