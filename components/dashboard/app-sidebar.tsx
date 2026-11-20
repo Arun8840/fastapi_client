@@ -3,10 +3,11 @@
 import {
   ChevronsUpDown,
   Code,
-  Flashlight,
+  Flame,
   LayoutDashboard,
   ListTodo,
   LogOut,
+  LucideIcon,
   MessagesSquare,
   ShieldCheck,
   Sparkles,
@@ -15,7 +16,6 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,32 +45,48 @@ import logo from "@/public/logoipsum-361.svg"
 import Image from "next/image";
 import Avvatars from "../ui/use-avatars";
 
-const workspaceItems = [
-  { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Chats", href: "/chats", icon: MessagesSquare },
-  { title: "Components", href: "/components", icon: Sparkles },
+type NavItem = {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+};
+
+type NavGroup = {
+  id: string;
+  label: string;
+  items: NavItem[];
+};
+
+const menuGroups: NavGroup[] = [
+  {
+    id: "workspace",
+    label: "Workspace",
+    items: [
+      { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
+      { title: "Chats", href: "/chats", icon: MessagesSquare },
+      { title: "Tasks", href: "/tasks", icon: ListTodo },
+    ],
+  },
+  {
+    id: "practice",
+    label: "Practice & Build",
+    items: [
+      { title: "DSA", href: "/practices", icon: Code },
+      { title: "React", href: "/react", icon: Flame },
+      { title: "Components", href: "/components", icon: Sparkles },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Admin & Access",
+    items: [
+      { title: "Peoples", href: "/peoples", icon: UsersRound },
+      { title: "Security", href: "/security", icon: ShieldCheck },
+    ],
+  },
 ];
 
-const manageItems = [
-  { title: "Workspaces", href: "/workspaces", icon: LayoutDashboard },
-  { title: "Peoples", href: "/peoples", icon: UsersRound },
-  { title: "Security", href: "/security", icon: ShieldCheck },
-  { title: "Tasks", href: "/tasks", icon: ListTodo },
-  { title: "DSA", href: "/practices", icon: Code },
-];
 
-function getInitials(email?: string) {
-  if (!email) return "?";
-
-  const name = email.split("@")[0] ?? email;
-  const parts = name.split(/[.\-_ ]+/).filter(Boolean);
-  const initials = parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-
-  return initials || "?";
-}
 
 export default function AppSidebar() {
   const pathname = usePathname();
@@ -121,45 +137,31 @@ export default function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {workspaceItems.map(({ title, href, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    isActive={isActive(href)}
-                    tooltip={title}
-                    render={<Link href={href} />}
-                  >
-                    <Icon />
-                    <span>{title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {
+          menuGroups?.map((grp, grpIdx) => {
+            return <SidebarGroup key={`${grp?.id}_${grpIdx}`}>
+              <SidebarGroupLabel>{grp?.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {grp?.items?.map(({ title, href, icon: Icon }) => (
+                    <SidebarMenuItem key={href}>
+                      <SidebarMenuButton
+                        isActive={isActive(href)}
+                        tooltip={title}
+                        render={<Link href={href} />}
+                      >
+                        <Icon />
+                        <span>{title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          })
+        }
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Manage</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {manageItems.map(({ title, href, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    isActive={isActive(href)}
-                    tooltip={title}
-                    render={<Link href={href} />}
-                  >
-                    <Icon />
-                    <span>{title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+
       </SidebarContent>
 
       <SidebarFooter>
